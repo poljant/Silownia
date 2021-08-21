@@ -13,14 +13,19 @@
 
 #include <OneWire.h>
 #include <DallasTemperature.h>
-#include <LiquidCrystal_PCF8574.h>
+
 #include <stdio.h>
 
+#ifdef CAD_ADS1015
 #include <Adafruit_ADS1X15.h>
 Adafruit_ADS1015 ads1015;  	// Construct an ads1015
 //Adafruit_ADS1115 ads1115;	// Construct an ads1115
+#endif
+#ifdef LCD_PCF8574
+#include <LiquidCrystal_PCF8574.h>
+LiquidCrystal_PCF8574 lcd(0x27);
 
-
+#endif
 /*
 *void setup(void)
 {
@@ -40,17 +45,15 @@ const char* ap_pass = "12345678";  // password do AP
 int ap_channel = 7; //numer kanału dla AP
 
 String version = VERSION;
-LiquidCrystal_PCF8574 lcd(0x27);
 
-
+#define ANALOG A0
+#define ERROR_U1 D5
+#define ERROR_U2 D6
 #define ONEWIRE D3
 #define PowerMax D4
 
+#ifdef CAD_ADS1015
 #define Alert D0
-#define ERROR_U1 D5
-#define ERROR_U2 D6
-#define ANALOG A0
-
 int mVperAmp = 66; // use 185 for 5A 100 for 20A Module and 66 for 30A Module
 int ACSoffset = 835; //2500;
 //	  uint16_t
@@ -65,6 +68,7 @@ Aby zmienić 7-bitowy adres z domyślnego 0x48 (1001000) należy połączyć pin
 0x4A (1001010) ADR -> SDA
 0x4B (1001011) ADR -> SCL*/
 #define Adr D8 // set address ADS1015 if value=0 address is 0x48 if value=1 address is 0x49
+#endif
 
 #ifdef IP_STATIC
 IPAddress IPadr(10,110,3,33);
@@ -146,6 +150,7 @@ void setup(){
 	pinMode(ERROR_U1, INPUT_PULLUP);
 	pinMode(ERROR_U2, INPUT_PULLUP);
 //	  ads1015.begin();  // Initialize ads1015 at the default address 0x48
+#ifdef LCD_PC8574
 		lcd.begin(16, 2);
 		lcd.home();
 		lcd.clear();
@@ -154,7 +159,7 @@ void setup(){
 		lcd.print(F("   Silownia!   "));
 		lcd.setCursor(0, 1);
 		lcd.print(F("Uruchamianie..."));
-
+#endif
 #ifdef WEBPAGEWIFISCAN
 	WiFiconnect();
 #else
@@ -170,10 +175,12 @@ void setup(){
 	MDNS.begin(hostname(), WiFi.localIP());
 //	DEBUG_OUTLN(hostname());
 //	DEBUG_OUTLN(WiFi.localIP());
+#ifdef CAD_ADS1015
 	// ustaw adres 0x48 na ADS1015
     pinMode(Adr, OUTPUT);
     digitalWrite(Adr, 0);
 	ads1015.begin();  // Initialize ads1015 at the default address 0x48
+#endif
 //led.begin(LED_PIN, true);
 	setservers();
 	aptime = fminutes(apminutes);
@@ -203,12 +210,15 @@ void loop(){
 		timec = millis() + timed;
 	A0Read = analogRead(ANALOG);
 	Ub = (16.4 *  A0Read /1024);
-
+#ifdef CAD_ADS1015
 	  adc0 = ads1015.readADC_SingleEnded(0);
-//	  adc1 = ads1015.readADC_SingleEnded(1);
+	  adc1 = ads1015.readADC_SingleEnded(1);
 	  adc2 = ads1015.readADC_SingleEnded(2);
-//	  adc3 = ads1015.readADC_SingleEnded(3);
-
+	  adc3 = ads1015.readADC_SingleEnded(3);
+	  Serial.print("AIN0: "); Serial.println(adc0);
+	  Serial.print("AIN2: "); Serial.println(adc2);
+	  Serial.print("AIN1: "); Serial.println(adc1);
+	  Serial.print("AIN3: "); Serial.println(adc3);
 /*	  volts0 = ads1015.computeVolts(adc0);
 	  volts1 = ads1015.computeVolts(adc1);
 	  volts2 = ads1015.computeVolts(adc2);
@@ -219,18 +229,19 @@ void loop(){
 	  amps2 = ((volts2 - ACSoffset) / mVperAmp);
 	  amps3 = ((volts3 - ACSoffset) / mVperAmp);*/
 
-	  Iz = -(adc0-ACSoffset)/19.214; //amps0;
+	  Iz = -(adc1-ACSoffset)/19.214; //amps0;
 	  Ib = (adc2-ACSoffset)/19.214; //amps2;
 //	  Ub = adc1;
-	  Io = Iz-Ib;
-	  //Io = ib/10;
 
+	  //Io = ib/10;
+#endif
+	  Io = Iz-Ib;
 //	snprintf_P(s, sizeof(s), PSTR("%s is %i years old"), name, age);
 	snprintf(s1,sizeof(s1),"Ub%.1fV",Ub);
 	snprintf(s2,sizeof(s2),"Ib%.1fA",Ib);
 	snprintf(s3,sizeof(s3),"Iz%.1fA",Iz);
 	snprintf(s4,sizeof(s4),"Io%.1fA",Io);
-
+#ifdef LCD_PCF8574
 	lcd.home();
 	lcd.clear();
 	lcd.setBacklight(255);
@@ -242,6 +253,7 @@ void loop(){
 	lcd.print(s3);
 	lcd.setCursor(8, 1);
 	lcd.print(s4);
+#endif
 	}
 /*	  Serial.println("-----------------------------------------------------------");
 	  Serial.print("AIN0: "); Serial.print(adc0); Serial.print("  "); Serial.print(volts0); Serial.println("V");
