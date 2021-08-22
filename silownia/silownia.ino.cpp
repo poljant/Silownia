@@ -26,6 +26,10 @@ Adafruit_ADS1015 ads1015;  	// Construct an ads1015
 LiquidCrystal_PCF8574 lcd(0x27);
 
 #endif
+#ifndef WEBPAGEWIFISCAN
+#include <WiFiManager.h>
+#endif
+//#define LWIP_IPV4
 /*
 *void setup(void)
 {
@@ -71,12 +75,12 @@ Aby zmienić 7-bitowy adres z domyślnego 0x48 (1001000) należy połączyć pin
 #endif
 
 #ifdef IP_STATIC
-IPAddress IPadr(10,110,3,33);
+IPAddress IPadr( 10, 110, 3, 33);
 IPAddress netmask(255,255,0,0);
 IPAddress gateway(10,110,0,1);
 //////////////////////////////
 #endif
-double long timed = 1500; //time to delay display
+double long timed = 2000; //time to delay display
 double long timec = 0; //time current to display
 #ifdef WEBPAGEWIFISCAN
 void WiFiconnect(void) {
@@ -163,11 +167,11 @@ void setup(){
 #ifdef WEBPAGEWIFISCAN
 	WiFiconnect();
 #else
-#include <WiFiManager.h>
+
   WiFiManager wifiManager;
   //wifiManager.resetSettings();
 #ifdef IP_STATIC
-  wifiManager.setSTAStaticIPConfig(IPadr, netmask, gateway);
+  wifiManager.setSTAStaticIPConfig(IPadr,gateway, netmask );
 #endif
   wifiManager.autoConnect(hostname().c_str());
   delay(100);
@@ -211,14 +215,17 @@ void loop(){
 	A0Read = analogRead(ANALOG);
 	Ub = (16.4 *  A0Read /1024);
 #ifdef CAD_ADS1015
+//	if(ads1015.getLastConversionResults()){
 	  adc0 = ads1015.readADC_SingleEnded(0);
 	  adc1 = ads1015.readADC_SingleEnded(1);
 	  adc2 = ads1015.readADC_SingleEnded(2);
 	  adc3 = ads1015.readADC_SingleEnded(3);
-	  Serial.print("AIN0: "); Serial.println(adc0);
+//	}
+
+/*	  Serial.print("AIN0: "); Serial.println(adc0);
 	  Serial.print("AIN2: "); Serial.println(adc2);
 	  Serial.print("AIN1: "); Serial.println(adc1);
-	  Serial.print("AIN3: "); Serial.println(adc3);
+	  Serial.print("AIN3: "); Serial.println(adc3);*/
 /*	  volts0 = ads1015.computeVolts(adc0);
 	  volts1 = ads1015.computeVolts(adc1);
 	  volts2 = ads1015.computeVolts(adc2);
@@ -236,12 +243,13 @@ void loop(){
 	  //Io = ib/10;
 #endif
 	  Io = Iz-Ib;
+#ifdef LCD_PCF8574
 //	snprintf_P(s, sizeof(s), PSTR("%s is %i years old"), name, age);
 	snprintf(s1,sizeof(s1),"Ub%.1fV",Ub);
 	snprintf(s2,sizeof(s2),"Ib%.1fA",Ib);
 	snprintf(s3,sizeof(s3),"Iz%.1fA",Iz);
 	snprintf(s4,sizeof(s4),"Io%.1fA",Io);
-#ifdef LCD_PCF8574
+
 	lcd.home();
 	lcd.clear();
 	lcd.setBacklight(255);
@@ -255,6 +263,14 @@ void loop(){
 	lcd.print(s4);
 #endif
 	}
+/*    // To jest przykładowy kod do generowania wolnego sterty co 5 sekund
+    // Jest to tani sposób na wykrycie wycieków pamięci
+    static unsigned long last = millis();
+    if (millis() - last > 2000) {
+        last = millis();
+        Serial.println();
+        Serial.printf("[MAIN] Free heap: %d bytes\n", ESP.getFreeHeap());//Wolne sterty
+    }*/
 /*	  Serial.println("-----------------------------------------------------------");
 	  Serial.print("AIN0: "); Serial.print(adc0); Serial.print("  "); Serial.print(volts0); Serial.println("V");
 	  Serial.print("AIN1: "); Serial.print(adc1); Serial.print("  "); Serial.print(volts1); Serial.println("V");
