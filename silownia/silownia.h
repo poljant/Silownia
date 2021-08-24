@@ -11,10 +11,11 @@
 
 #define VERSION "0.3"
 #define IP_STATIC
+#define POLISH
 #define HOSTNAME "Silownia"
 //add WebPage WiFi scan
-//#define WEBPAGEWIFISCAN
+#define WEBPAGEWIFISCAN
 #define LCD_PCF8574
-#define CAD_ADS1015
+//#define CAD_ADS1015
 
 #endif /* SILOWNIA_SILOWNIA_H_ */

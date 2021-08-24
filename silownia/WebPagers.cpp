@@ -5,10 +5,12 @@
  *  Created on: 6 lis 2019
  *      Author: jant
  */
+#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
 #include <pgmspace.h>
 #include "silownia.h"
+#include "templates.h"
 
 extern float Ub, Ib, Iz, Io;
 // login i hasło do sytemu (for http//IP/update)
@@ -24,6 +26,7 @@ const char* modes[] = { "NULL", "STA", "AP", "STA+AP" };
 const char* phymodes[] = { "", "B", "G", "N" };
 const char* encrypType[] = { "OPEN","WEP", "WPA","WPA", "WPA2", "WEP", "WPA_WPA2","OPEN", "WPA/WPA2/PSK" }; //??????
 
+extern float Ub, Ib, Iz, Io;
 const int port = 80;                 // port server www
 ESP8266WebServer server(port);
 ESP8266HTTPUpdateServer httpUpdate;
@@ -32,6 +35,7 @@ ESP8266HTTPUpdateServer httpUpdate;
 unsigned long fminutes(unsigned int ile) {
 	return (millis() + (1000 * 60 * ile));
 }
+
 // funkcja zamieniająca adres IP na string
 //convert IP to String
 String IPtoStr(IPAddress IP) {
@@ -54,8 +58,17 @@ char* IPtoChar(int ip)
     (ip >> 24) & 0xFF);
   return ip_str;
 }
+/*tring AddComplete(const char pattern, int addlen){
+	char buff[sizeof(pattern)+addlen];
+	snprintf_P(buff, sizeof(buff),
+	        response, sizeof(response),
+	return buff.c_str();
+}*/
 String HTMLHeader() {           //  nagłówek strony //Header page
-	String h = F("<!DOCTYPE html>\n"
+
+	char* buff = new char[sizeof(HTML_HEADERS)+33];
+	sprintf_P(buff, HTML_HEADERS, HOSTNAME);
+/*	String h = F("<!DOCTYPE html>\n"
 			"<html>"
 			"<head>"
 			"<title>");
@@ -65,59 +78,40 @@ String HTMLHeader() {           //  nagłówek strony //Header page
 			"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
 			"<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css\" >"
 			"</head>"
-			"<body style=\"text-align: center;color: white; background: black;font-size: 1.5em;\">\n");
-	return h;
+			"<body style=\"text-align: center;color: white; background: black;font-size: 1.5em;\">\n");*/
+	//return h;
+	return buff;
 }
 
 String HTMLFooter() {             //  stopka strony www  //foot page
-	String f = F("<p>Jan Trzciński &copy; 2021 VII ");
+	char* buff = new char[sizeof(HTML_FOOTER)+16];
+	sprintf_P(buff, HTML_FOOTER, VERSION);
+/*//	char buff
+	String f = F("<p>Jan Trzciński &copy; 2021 VII Ver.");
 	f += VERSION;
 	f += ("</p></td></tr>"
 			"</body>\n"
-			"</html>\n");
-	return f;
+			"</html>\n");*/
+	return buff;
 }
 
 String HTMLPage1() {      // pierwsza część strony www // primare page
-//	char cbuf[10];
-	String t = F("<h1>");
-	t += String(HOSTNAME);
-	t += F("</h1>");
-     t += F("<p> Napięcie baterii: ");
-//     snprintf_P(cbuf,sizeof(cbuf),"Ub=%.1fV",Ub);
-     t += String(Ub);
-     t += F(" V</p>");
-     t += F("<p> Prąd baterii: ");
-//     snprintf_P(cbuf,sizeof(cbuf),"Ub=%.1fV",Ib);
-     t += String(Ib);
-     t += F(" A</p>");
-     t += F("<p> Prąd zasilania: ");
-     t += String(Iz);
-     t += F(" A</p>");
-     t += F("<p> Prąd obciążenia: ");
-     t += String(Io);
-     t += F(" A</p>");
-
-  #ifdef POLISH
-	#ifdef WEBPAGEWIFISCAN
-		t += F("<p><a href = \"/wifiscan\"><button class=\"btn btn-info\">Skanuj WiFi</button></a></p>");
-	#endif
-		t += F("<p><a href = \"/\"><button class=\"btn btn-info\">Odświerz</button></a></p>");
-  #else
-
-	#ifdef WEBPAGEWIFISCAN
-	t += F("<p><a href = \"/wifiscan\"><button class=\"btn btn-info\">WiFi Scan</button></a></p>");
-	#endif
-	t += F("<p><a href = \"/\"><button class=\"btn btn-info\">Reload</button></a></p>");
-  #endif
-	return t;
+	char buff[sizeof(HTML_PAGE1)+16];
+	sprintf_P(buff, HTML_PAGE1, HOSTNAME, Ub ,Ib ,Iz , Io);
+	return buff;
 }
 
 #ifdef WEBPAGEWIFISCAN
 String HTMLWiFiScan(void){
+	char buff[(sizeof(HTML_WIFISCAN_TAB)+256)];
+	//char* ssid = new char[32];
+	String ssid;
+//	char hiden[3];
+	String hiden="" ;
 	String p="";
 	String ix="";
-	uint8_t n = WiFi.scanNetworks();
+//	uint8_t n = WiFi.scanNetworks();
+	int n = WiFi.scanNetworks();
   delay(100);
 #ifdef POLISH
 	if (n == 0) return F("<p>Brak sieci WiFi.</p>");
@@ -126,7 +120,8 @@ String HTMLWiFiScan(void){
   if (n == 0) return F("<p>No WiFi networks.</p>");
   p += F("<div><h3>WiFi network scanning.</h3></div>");
 #endif
-  p += F("<table  align=\"center\" border=\"2\" >"
+  p += HTML_WIFISCAN;
+/*  p += F("<table  align=\"center\" border=\"2\" >"
 	"<thead ><tr><th> </th><th style = \"text-align: center;\">SSID</th>");
 #ifdef POLISH
 	p += F("<th>kanał</th><th style = \"text-align: center;\">MAC</th>"
@@ -135,9 +130,9 @@ String HTMLWiFiScan(void){
   p +=F("<th>channel</th><th style = \"text-align: center;\">MAC</th>"
       "<th style = \"text-align: center;\">RSSI</th><th>encryption</th><th>hidden</th><tr>");
 #endif
-	p +=F("</thead><tbody>");
-	 for (unsigned int i=0; i<n;i++){	//uint8_t
-	 p += F("<tr><td>"
+	p +=F("</thead><tbody>");*/
+	 for ( int i=0; i<n;  i++){	//uint8_t
+/*	 p += F("<tr><td>"
 	 "<form action=\"/wifiset\" metod=\"post\">"
 	 "<labe><input id=\"SSID\" type=\"radio\" name=\"SSID\" value=\"");
 	 p += WiFi.SSID(i);
@@ -149,17 +144,23 @@ String HTMLWiFiScan(void){
 	 p +="<td>";
 //     p +=(String(WiFi.encryptionType(i)));// szyfrowanie
 	 p +=(encrypType[WiFi.encryptionType(i)]);// szyfrowanie //encriptonType
-	 p += F("</td><td>");
+	 p += F("</td><td>");*/
 #ifdef POLISH
-	 p +=((WiFi.isHidden(i)) ? "tak" : "nie");//czy sieć ukryta
+	 hiden =(WiFi.isHidden(i) ? "tak" : "nie");//czy sieć ukryta
 #else
-   p +=((WiFi.isHidden(i)) ? "yes" : "no");//WiFi hidden or not
+	 hiden =((WiFi.isHidden(i)) ? "yes" : "no");//WiFi hidden or not
 #endif
-	 p +=F("</td></tr>");
+/*	 ssid = (WiFi.SSID(i));
+	 Serial.println(ssid);
+	 Serial.println(WiFi.SSID(i));*/
+	sprintf_P(buff, HTML_WIFISCAN_TAB, WiFi.SSID(i).c_str(), WiFi.SSID(i).c_str() ,(WiFi.channel(i)) ,WiFi.BSSIDstr(i).c_str() , (WiFi.RSSI(i)),(encrypType[WiFi.encryptionType(i)]),hiden);
+	 p += String(buff);
 	 } //end for
+
 	 p += F("</tbody></table><div><p></p> </div>");
    return p;
 }
+
 String HTMLWiFiScan1(void){
   String p="";
   String ix="";
