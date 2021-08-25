@@ -154,7 +154,7 @@ void setup(){
 	pinMode(ERROR_U1, INPUT_PULLUP);
 	pinMode(ERROR_U2, INPUT_PULLUP);
 //	  ads1015.begin();  // Initialize ads1015 at the default address 0x48
-#ifdef LCD_PC8574
+#ifdef LCD_PCF8574
 		lcd.begin(16, 2);
 		lcd.home();
 		lcd.clear();
@@ -177,8 +177,6 @@ void setup(){
   delay(100);
 #endif
 	MDNS.begin(hostname(), WiFi.localIP());
-//	DEBUG_OUTLN(hostname());
-//	DEBUG_OUTLN(WiFi.localIP());
 #ifdef CAD_ADS1015
 	// ustaw adres 0x48 na ADS1015
     pinMode(Adr, OUTPUT);
