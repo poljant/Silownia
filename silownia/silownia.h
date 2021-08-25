@@ -9,7 +9,7 @@
 #define SILOWNIA_SILOWNIA_H_
 
 
-#define VERSION "0.3"
+#define VERSION "0.5 Beta"
 #define IP_STATIC
 #define POLISH
 #define HOSTNAME "Silownia"
