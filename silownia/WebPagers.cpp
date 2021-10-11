@@ -58,12 +58,6 @@ char* IPtoChar(int ip)
     (ip >> 24) & 0xFF);
   return ip_str;
 }
-/*tring AddComplete(const char pattern, int addlen){
-	char buff[sizeof(pattern)+addlen];
-	snprintf_P(buff, sizeof(buff),
-	        response, sizeof(response),
-	return buff.c_str();
-}*/
 String HTMLHeader() {           //  nagłówek strony //Header page
 
 	char* buff = new char[sizeof(HTML_HEADERS)+33];
